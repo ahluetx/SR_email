@@ -1,0 +1,89 @@
+Sub ProcessRegistrations9()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' Determine the last row with data in column B (Email)
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
+
+    ' Add a new column for Client IDs extracted from URLs in column E
+    ' Assuming column F is empty and can be used to store Client IDs
+    Dim clientIDColumn As String
+    clientIDColumn = "F"
+    Dim i As Long
+    For i = 2 To lastRow
+        ' Extract the last 4 digits from the URL and store them in the new column
+        ws.Cells(i, clientIDColumn).Value = Right(ws.Cells(i, "E").Value, 4)
+    Next i
+
+    ' Sort by Email, and then by ClientID
+    ws.Sort.SortFields.Clear
+    ws.Sort.SortFields.Add2 Key:=ws.Range("B2:B" & lastRow), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+    ws.Sort.SortFields.Add2 Key:=ws.Range(clientIDColumn & "2:" & clientIDColumn & lastRow), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+
+    With ws.Sort
+        .SetRange ws.Range("A1:" & clientIDColumn & lastRow)
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+
+    ' Process each entry for duplicate emails and client IDs
+    For i = lastRow To 2 Step -1
+        If ws.Cells(i, 2).Value = ws.Cells(i - 1, 2).Value Then ' Same Email
+            ' Compare client IDs
+            If ws.Cells(i, clientIDColumn).Value <> ws.Cells(i - 1, clientIDColumn).Value Then ' Different Client IDs
+                ' Different individuals using the same email
+                ' Concatenate Names
+                ws.Cells(i - 1, 1).Value = ws.Cells(i - 1, 1).Value & ", " & ws.Cells(i, 1).Value ' Names
+                ' Check for unique Event Dates and Names before concatenating
+                If Not IsInConcatenatedList(ws.Cells(i - 1, 3).Value, ws.Cells(i, 3).Value) Then
+                    ws.Cells(i - 1, 3).Value = ws.Cells(i - 1, 3).Value & ", " & ws.Cells(i, 3).Value ' Event Dates
+                End If
+                If Not IsInConcatenatedList(ws.Cells(i - 1, 4).Value, ws.Cells(i, 4).Value) Then
+                    ws.Cells(i - 1, 4).Value = ws.Cells(i - 1, 4).Value & ", " & ws.Cells(i, 4).Value ' Event Names
+                End If
+                ' Concatenate URLs as they are always unique
+                ws.Cells(i - 1, 5).Value = ws.Cells(i - 1, 5).Value & ", " & ws.Cells(i, 5).Value
+            Else ' Same Client IDs
+                ' A single person registering for multiple events
+                ' Check for unique Event Dates and Names before concatenating
+                If Not IsInConcatenatedList(ws.Cells(i - 1, 3).Value, ws.Cells(i, 3).Value) Then
+                    ws.Cells(i - 1, 3).Value = ws.Cells(i - 1, 3).Value & ", " & ws.Cells(i, 3).Value ' Event Dates
+                End If
+                If Not IsInConcatenatedList(ws.Cells(i - 1, 4).Value, ws.Cells(i, 4).Value) Then
+                    ws.Cells(i - 1, 4).Value = ws.Cells(i - 1, 4).Value & ", " & ws.Cells(i, 4).Value ' Event Names
+                End If
+            End If
+            ' Remove the processed row
+            ws.Rows(i).Delete
+        End If
+    Next i
+
+    ' Clean up: Remove the temporary Client ID column
+    ws.Columns(clientIDColumn & ":" & clientIDColumn).Delete
+End Sub
+
+' Function to check if a value is already in a concatenated list
+Function IsInConcatenatedList(concatenatedList As String, valueToCheck As String) As Boolean
+    ' This function checks if a value is already present in a list that has been concatenated into a string.
+    ' Each value in the concatenated list is assumed to be separated by a comma.
+    
+    ' Split the concatenated list into an array of values
+    Dim listArray() As String
+    listArray = Split(concatenatedList, ", ")
+    
+    ' Trim spaces and check each value in the array against the value to check
+    Dim i As Integer
+    For i = LBound(listArray) To UBound(listArray)
+        If Trim(listArray(i)) = Trim(valueToCheck) Then
+            IsInConcatenatedList = True
+            Exit Function
+        End If
+    Next i
+    
+    ' If not found, return False
+    IsInConcatenatedList = False
+End Function
