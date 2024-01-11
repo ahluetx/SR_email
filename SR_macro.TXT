@@ -1,0 +1,245 @@
+Sub scrubDataFromMileSplit()
+    Dim ColString As String
+    Dim ColIndex As Integer
+    Dim RowIndex As Integer
+    Dim SafetyNet As Integer
+    Dim StartVal As Integer
+    Dim MaxRow As Integer
+    Dim intlastColumn As Integer
+    Dim intlastRow As Integer
+    Dim iLastRow As Long
+    Dim intStartrow As Integer
+    Dim strRange As String
+    Dim strRowsSelect As String
+    Dim strRangeColumns As String
+    Dim strRangeCells As String
+
+    Dim UserChoice As String
+    Dim UserChoiceRange As String
+
+    Dim sBib As Integer
+    Dim eBib As Integer
+    Dim bibCount As Integer
+
+    ColString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"    'To aid in accessing cols by name instead of index
+    StartVal = 1
+    SafetyNet = 5000
+    RowIndex = 2
+
+    'Rename the Worksheet
+
+    Application.ScreenUpdating = False
+
+   ' Sheets("Sheet1").Select
+    ActiveSheet.Name = "XC"
+   
+   'Setup temp fields to use later within the software
+   
+    intlastColumn = ActiveSheet.UsedRange.Column - 1 + ActiveSheet.UsedRange.Columns.Count
+    intlastRow = ActiveSheet.UsedRange.Rows(ActiveSheet.UsedRange.Rows.Count).Row
+    intStartrow = 1
+    strRange = CStr(intStartrow & ":" & intlastRow) '
+
+
+
+'Ask Question for RunScore Setup
+
+    Range("A2:A" & Range("A" & Rows.Count).End(xlUp).Row).AdvancedFilter Action:=xlFilterCopy, CopyToRange:=Range("W2"), Unique:=True
+    Range("W2").Delete xlShiftUp
+    iLastRow = ActiveSheet.Cells(ActiveSheet.Rows.Count, "W").End(xlUp).Row
+    iLastRow = iLastRow
+    Application.ScreenUpdating = True
+   
+    For i = 2 To iLastRow
+    UserChoiceRange = CStr("W" & i)
+    UserChoice = UCase(Application.InputBox("Enter Type (R,O):  ", Range(UserChoiceRange).Value, Type:=2))
+
+
+' Update R's or O's
+'
+    If CBool(InStr(1, "RO", UserChoice, vbTextCompare)) Then
+        Range(strRange).Select
+        Columns("A:A").Select
+        Selection.Replace What:=Range(UserChoiceRange).Value, Replacement:=UserChoice, LookAt:= _
+        xlPart, SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+    End If
+   Next
+
+
+
+'Part II Remove Columns
+'strRange = CStr(intStartrow & ":" & intlastRow)
+Range(strRange).Select
+
+    Columns("U:W").Select
+    Selection.Delete Shift:=xlToLeft
+    Columns("T:T").Select
+    Selection.Delete Shift:=xlToLeft
+    Columns("K:R").Select
+    Range("R1").Activate
+    Selection.Delete Shift:=xlToLeft
+    Columns("H:I").Select
+    Range("I1").Activate
+    Selection.Delete Shift:=xlToLeft
+
+
+
+'Part X Sort the Data
+'Team,Gender,Last Name, First Name
+
+Range(strRange).Select
+    Cells.Select
+    ActiveWorkbook.Worksheets("XC").Sort.SortFields.Clear
+
+strRangeCells = CStr("G" & StartRow + 1 & ":G" & intlastRow)
+
+    ActiveWorkbook.Worksheets("XC").Sort.SortFields.Add Key:=Range(strRangeCells), _
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+
+
+strRangeCells = Replace(strRangeCells, "G", "F")
+
+    ActiveWorkbook.Worksheets("XC").Sort.SortFields.Add Key:=Range(strRangeCells), _
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+
+   
+strRangeCells = Replace(strRangeCells, "F", "A")
+   
+   
+    ActiveWorkbook.Worksheets("XC").Sort.SortFields.Add Key:=Range(strRangeCells), _
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+       
+strRangeCells = Replace(strRangeCells, "A", "B")
+   
+    ActiveWorkbook.Worksheets("XC").Sort.SortFields.Add Key:=Range(strRangeCells), _
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+       
+strRangeCells = Replace(strRangeCells, "B", "C")
+       
+    ActiveWorkbook.Worksheets("XC").Sort.SortFields.Add Key:=Range(strRangeCells), _
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+       
+strRangeCells = Replace(strRangeCells, "C", "D")
+       
+    ActiveWorkbook.Worksheets("XC").Sort.SortFields.Add Key:=Range(strRangeCells), _
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+       
+strRangeCells = Replace(strRangeCells, "D", "E")
+       
+    ActiveWorkbook.Worksheets("XC").Sort.SortFields.Add Key:=Range(strRangeCells), _
+        SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+       
+    With ActiveWorkbook.Worksheets("XC").Sort
+        .SetRange Range(strRange)
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+
+
+
+'''Range(strRange).Select
+
+    Columns("B:C").Select
+    Selection.Delete Shift:=xlToLeft
+
+
+'Assign Bib Numbers
+
+'
+    Columns("A:A").Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("A1").Select
+    ActiveCell.FormulaR1C1 = "Bib"
+
+    UserChoice = UCase(Application.InputBox(" Do you want to Assign Bib numbers for the Event(Y or N):  ", "Assign Bib Number", Type:=2))
+
+   ' If CBool(InStr(1, UserChoice, "Y", vbTextCompare)) Then
+   '     Range("A2").Select
+   '     ActiveCell.FormulaR1C1 = "=1"
+   '     Range("A3").Select
+   '     ActiveCell.FormulaR1C1 = "=R[-1]C+1"
+   '     Range("A3").Select
+   '     Selection.Copy
+   '     strRangeSelect = "A4:A" & intlastRow
+   '     Range(strRangeSelect).Select
+   '     ActiveSheet.Paste
+   ' End If
+
+''''
+sBib = 1
+eBib = 2000
+
+    If CBool(InStr(1, UserChoice, "Y", vbTextCompare)) Then
+
+        sBib = UCase(Application.InputBox(" Starting Number):  ", "Assign Starting Bib Number", Type:=2))
+        eBib = UCase(Application.InputBox(" Ending Number):  ", "Assign Ending Bib Number", Type:=2))
+          'sBib = "=" & sBib
+        If eBib < sBib Then
+            MsgBox ("Ending number < Starting number, Re-enter Ending Number please")
+            eBib = UCase(Application.InputBox(" Ending Number ):  ", "Assign Ending Bib Number", Type:=2))
+        End If
+        bibCount = eBib - sBib
+        
+        If bibCount > intlastRow Then
+            bibCount = intlastRow
+        End If
+        If bibCount < intlastRow Then
+            intlastRow = bibCount
+        End If
+         
+    End If
+
+    If CBool(InStr(1, UserChoice, "Y", vbTextCompare)) Then
+        Range("A2").Select
+'        ActiveCell.FormulaR1C1 = "=1"
+        Range("A2").Value = sBib
+
+
+        Range("A3").Select
+        ActiveCell.FormulaR1C1 = "=R[-1]C+1"
+        Range("A3").Select
+        Selection.Copy
+        strRangeSelect = "A4:A" & intlastRow
+        Range(strRangeSelect).Select
+        ActiveSheet.Paste
+    End If
+''''
+
+' Update the Header Row
+    Range("1:1").Select
+
+'Event
+    Selection.Replace What:="Event", Replacement:="Race", LookAt:= _
+        xlPart, SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+       
+'Last Name
+    Selection.Replace What:="LName", Replacement:="Last Name", LookAt:= _
+        xlPart, SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+        ReplaceFormat:=False
+
+'First Name
+  Selection.Replace What:="FName", Replacement:="First Name", LookAt:= _
+        xlPart, SearchOrder:=xlByRows, MatchCase:=True, SearchFormat:=False, _
+        ReplaceFormat:=False
+
+'Gender
+    Selection.Replace What:="Gender", Replacement:="Sex", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=True, SearchFormat:=False, _
+        ReplaceFormat:=False
+       
+'ContactName
+    Selection.Replace What:="ContactName", Replacement:="EMSName", LookAt:=xlPart, _
+        SearchOrder:=xlByRows, MatchCase:=True, SearchFormat:=False, _
+        ReplaceFormat:=False
+   
+
+'ActiveSheet.Activate
+' ThisWorkbook.SaveAs FileFormat:=xlOpenXMLWorkbookMacroEnabled
+
+End Sub
+
